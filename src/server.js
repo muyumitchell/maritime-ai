@@ -4,6 +4,7 @@ require('dotenv').config()
 
 const vesselRoutes = require('./routes/vessels')
 const aiRoutes = require('./routes/ai')
+const alertRoutes = require('./routes/alerts')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -17,6 +18,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/vessels', vesselRoutes)
 app.use('/api/ask', aiRoutes)
+app.use('/api/alerts', alertRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
