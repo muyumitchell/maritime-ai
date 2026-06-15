@@ -1,0 +1,82 @@
+const WebSocket = require('ws')
+const pool = require('./db/index')
+require('dotenv').config()
+
+// Bounding box around Kenya's coast / Mombasa port area
+// [latitude, longitude] pairs - covers Mombasa to Dar es Salaam region
+const KENYA_COAST_BOX = [
+  [-15.0, 35.0],
+  [15.0, 55.0]
+]
+const connectToAIS = () => {
+  const ws = new WebSocket('wss://stream.aisstream.io/v0/stream')
+
+  ws.on('open', () => {
+    console.log('Connected to AIS stream')
+
+    const subscriptionMessage = {
+      APIKey: process.env.AISSTREAM_API_KEY,
+      BoundingBoxes: [KENYA_COAST_BOX],
+      FilterMessageTypes: ['PositionReport']
+    }
+
+    ws.send(JSON.stringify(subscriptionMessage))
+    console.log('Subscription sent:', JSON.stringify(subscriptionMessage))
+  })
+
+  ws.on('message', async (data) => {
+    try {
+      const message = JSON.parse(data)
+      console.log('Message type received:', message.MessageType)
+
+      if (message.MessageType === 'PositionReport') {
+        const report = message.Message.PositionReport
+        const meta = message.MetaData
+
+        const mmsi = meta.MMSI.toString()
+        const name = meta.ShipName ? meta.ShipName.trim() : `Vessel ${mmsi}`
+        const lat = report.Latitude
+        const lon = report.Longitude
+        const speed = report.Sog // Speed over ground
+
+       console.log(`Received update: ${name} (${mmsi}) at ${lat}, ${lon}, speed ${speed}`)
+
+        // Data validation - reject impossible values
+        const isValidSpeed = speed >= 0 && speed <= 50
+        const isValidPosition = lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
+
+        if (!isValidSpeed || !isValidPosition) {
+          console.log(`Skipped ${name} - invalid data (speed: ${speed}, lat: ${lat}, lon: ${lon})`)
+          return
+        }
+
+        // Insert or update vessel in database
+        await pool.query(
+          `INSERT INTO vessels (name, mmsi, type, lat, lon, speed, status, last_seen)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+           ON CONFLICT (mmsi) 
+           DO UPDATE SET 
+             lat = $4, 
+             lon = $5, 
+             speed = $6, 
+             status = $7,
+             last_seen = NOW()`,
+          [name, mmsi, 'Unknown', lat, lon, speed, speed > 0.5 ? 'Underway' : 'At anchor']
+        )
+      }
+    } catch (error) {
+      console.error('Error processing AIS message:', error.message)
+    }
+  })
+
+ ws.on('close', (code, reason) => {
+    console.log('AIS connection closed. Code:', code, 'Reason:', reason.toString())
+    setTimeout(connectToAIS, 5000)
+})
+
+  ws.on('error', (error) => {
+    console.error('AIS connection error:', error.message)
+  })
+}
+
+module.exports = { connectToAIS }

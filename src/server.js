@@ -6,6 +6,7 @@ const vesselRoutes = require('./routes/vessels')
 const aiRoutes = require('./routes/ai')
 const alertRoutes = require('./routes/alerts')
 const fleetRoutes = require('./routes/fleet')
+const { connectToAIS } = require('./ais')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -24,4 +25,5 @@ app.use('/api/fleet', fleetRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
+  connectToAIS()
 })
