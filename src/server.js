@@ -6,6 +6,7 @@ const vesselRoutes = require('./routes/vessels')
 const aiRoutes = require('./routes/ai')
 const alertRoutes = require('./routes/alerts')
 const fleetRoutes = require('./routes/fleet')
+const weatherRoutes = require('./routes/weather')
 const { connectToAIS } = require('./ais')
 
 const app = express()
@@ -22,6 +23,7 @@ app.use('/api/vessels', vesselRoutes)
 app.use('/api/ask', aiRoutes)
 app.use('/api/alerts', alertRoutes)
 app.use('/api/fleet', fleetRoutes)
+app.use('/api/weather', weatherRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)

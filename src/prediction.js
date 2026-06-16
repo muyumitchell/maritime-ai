@@ -1,7 +1,8 @@
 const pool = require('./db/index')
 const { askMaritime } = require('./ai')
+const { getMarineWeather } = require('./weather')
 
-const calculateRiskScore = (vessel, maintenanceRecords) => {
+const calculateRiskScore = (vessel, maintenanceRecords, weather) => {
   let score = 0
   let reasons = []
 
@@ -33,6 +34,17 @@ const calculateRiskScore = (vessel, maintenanceRecords) => {
     reasons.push(`No signal for ${Math.round(hoursAgo)} hours`)
   }
 
+  // Factor in weather risk
+  if (weather) {
+    if (weather.risk_level === 'high') {
+      score += 30
+      reasons.push(`Severe weather: ${weather.weather}, wind ${weather.wind_speed}m/s`)
+    } else if (weather.risk_level === 'medium') {
+      score += 15
+      reasons.push(`Adverse weather: ${weather.weather}, wind ${weather.wind_speed}m/s`)
+    }
+  }
+
   // Determine severity
   let severity = 'low'
   if (score >= 60) severity = 'high'
@@ -55,11 +67,14 @@ const generateAlerts = async () => {
         [vessel.id]
       )
 
+      // Get weather at vessel's current position
+      const weather = await getMarineWeather(vessel.lat, vessel.lon)
+
       const { score, reasons, severity } = calculateRiskScore(
         vessel,
-        maintenance.rows
+        maintenance.rows,
+        weather
       )
-
       // Only alert if there is actual risk
       if (score > 0) {
         // Ask AI to explain the risk and recommend action
