@@ -50,8 +50,8 @@ const connectToAIS = () => {
           return
         }
 
-        // Insert or update vessel in database
-        await pool.query(
+       // Insert or update vessel in database
+        const updateResult = await pool.query(
           `INSERT INTO vessels (name, mmsi, type, lat, lon, speed, status, last_seen)
            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
            ON CONFLICT (mmsi) 
@@ -60,9 +60,16 @@ const connectToAIS = () => {
              lon = $5, 
              speed = $6, 
              status = $7,
-             last_seen = NOW()`,
+             last_seen = NOW()
+           RETURNING *`,
           [name, mmsi, 'Unknown', lat, lon, speed, speed > 0.5 ? 'Underway' : 'At anchor']
         )
+
+        // Push live update to all connected frontends instantly
+        if (global.io && updateResult.rows[0]) {
+          global.io.emit('vessel_update', updateResult.rows[0])
+          console.log(`Live update pushed: ${name}`)
+        }
       }
     } catch (error) {
       console.error('Error processing AIS message:', error.message)

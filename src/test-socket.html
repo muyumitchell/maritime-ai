@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Maritime AI — Live Vessel Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0a0e1a;
+      color: #00ff88;
+      padding: 20px;
+    }
+    h1 { color: #00aaff; }
+    .status { 
+      padding: 8px 16px; 
+      border-radius: 4px; 
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .connected { background: #00ff8822; border: 1px solid #00ff88; }
+    .disconnected { background: #ff000022; border: 1px solid #ff0000; color: #ff0000; }
+    .vessel-card {
+      background: #111827;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .vessel-name { color: #00aaff; font-size: 18px; font-weight: bold; }
+    .update-flash { animation: flash 1s; }
+    @keyframes flash {
+      0% { border-color: #00ff88; }
+      100% { border-color: #1e3a5f; }
+    }
+    .log {
+      background: #111827;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 16px;
+      height: 200px;
+      overflow-y: auto;
+      font-size: 12px;
+      margin-top: 20px;
+    }
+    .log-entry { margin-bottom: 4px; color: #888; }
+    .log-entry.new { color: #00ff88; }
+  </style>
+</head>
+<body>
+  <h1>🚢 Maritime AI — Live Vessel Tracker</h1>
+  <div id="status" class="status disconnected">⚡ Connecting...</div>
+  
+  <h2>Fleet Positions</h2>
+  <div id="vessels"></div>
+
+  <h2>Live Update Log</h2>
+  <div id="log" class="log"></div>
+
+  <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io('http://localhost:3000')
+    const vessels = {}
+
+    const statusEl = document.getElementById('status')
+    const vesselsEl = document.getElementById('vessels')
+    const logEl = document.getElementById('log')
+
+    const addLog = (message, isNew = false) => {
+      const entry = document.createElement('div')
+      entry.className = `log-entry ${isNew ? 'new' : ''}`
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+      logEl.prepend(entry)
+    }
+
+    const renderVessel = (vessel) => {
+      vessels[vessel.id] = vessel
+      
+      let card = document.getElementById(`vessel-${vessel.id}`)
+      if (!card) {
+        card = document.createElement('div')
+        card.id = `vessel-${vessel.id}`
+        card.className = 'vessel-card'
+        vesselsEl.appendChild(card)
+      }
+
+      card.className = 'vessel-card update-flash'
+      card.innerHTML = `
+        <div class="vessel-name">${vessel.name}</div>
+        <div>MMSI: ${vessel.mmsi}</div>
+        <div>Position: ${parseFloat(vessel.lat).toFixed(4)}°, ${parseFloat(vessel.lon).toFixed(4)}°</div>
+        <div>Speed: ${vessel.speed} knots</div>
+        <div>Status: ${vessel.status}</div>
+        <div>Last seen: ${new Date(vessel.last_seen).toLocaleTimeString()}</div>
+      `
+    }
+
+    socket.on('connect', () => {
+      statusEl.className = 'status connected'
+      statusEl.textContent = '✅ Connected to Maritime AI — receiving live updates'
+      addLog('Connected to server')
+    })
+
+    socket.on('disconnect', () => {
+      statusEl.className = 'status disconnected'
+      statusEl.textContent = '❌ Disconnected'
+      addLog('Disconnected from server')
+    })
+
+    // Receive all vessel positions on first connect
+    socket.on('vessel_positions', (data) => {
+      addLog(`Received ${data.length} vessel positions`)
+      data.forEach(renderVessel)
+    })
+
+    // Receive live position updates as ships move
+    socket.on('vessel_update', (vessel) => {
+      addLog(`Live update: ${vessel.name} at ${parseFloat(vessel.lat).toFixed(4)}°, ${parseFloat(vessel.lon).toFixed(4)}°`, true)
+      renderVessel(vessel)
+    })
+  </script>
+</body>
+</html>
