@@ -12,7 +12,9 @@ const weatherRoutes = require('./routes/weather')
 const queryRoutes = require('./routes/query')
 const zoneRoutes = require('./routes/zones')
 const intelligenceRoutes = require('./routes/intelligence')
+const logsRoutes = require('./routes/logs')
 const { connectToAIS } = require('./ais')
+const { startScheduler } = require('./scheduler')
 const pool = require('./db/index')
 
 const app = express()
@@ -40,6 +42,7 @@ app.use('/api/weather', weatherRoutes)
 app.use('/api/query', queryRoutes)
 app.use('/api/zones', zoneRoutes)
 app.use('/api/intelligence', intelligenceRoutes)
+app.use('/api/logs', logsRoutes)
 
 // Socket.io connection handler
 io.on('connection', (socket) => {
@@ -61,4 +64,5 @@ global.io = io
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
   connectToAIS()
+  startScheduler(30)
 })
