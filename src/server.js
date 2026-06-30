@@ -13,6 +13,7 @@ const queryRoutes = require('./routes/query')
 const zoneRoutes = require('./routes/zones')
 const intelligenceRoutes = require('./routes/intelligence')
 const logsRoutes = require('./routes/logs')
+const optimizeRoutes = require('./routes/optimize')
 const { connectToAIS } = require('./ais')
 const { startScheduler } = require('./scheduler')
 const pool = require('./db/index')
@@ -28,6 +29,7 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000
 
 app.use(cors())
+app.use(express.json())
 app.use(express.static('src'))
 
 app.get('/', (req, res) => {
@@ -43,6 +45,7 @@ app.use('/api/query', queryRoutes)
 app.use('/api/zones', zoneRoutes)
 app.use('/api/intelligence', intelligenceRoutes)
 app.use('/api/logs', logsRoutes)
+app.use('/api/optimize', optimizeRoutes)
 
 // Socket.io connection handler
 io.on('connection', (socket) => {
