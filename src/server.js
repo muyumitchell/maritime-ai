@@ -14,6 +14,7 @@ const zoneRoutes = require('./routes/zones')
 const intelligenceRoutes = require('./routes/intelligence')
 const logsRoutes = require('./routes/logs')
 const optimizeRoutes = require('./routes/optimize')
+const fuelRoutes = require('./routes/fuel')
 const { connectToAIS } = require('./ais')
 const { startScheduler } = require('./scheduler')
 const pool = require('./db/index')
@@ -46,6 +47,7 @@ app.use('/api/zones', zoneRoutes)
 app.use('/api/intelligence', intelligenceRoutes)
 app.use('/api/logs', logsRoutes)
 app.use('/api/optimize', optimizeRoutes)
+app.use('/api/fuel', fuelRoutes)
 
 // Socket.io connection handler
 io.on('connection', (socket) => {
