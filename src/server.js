@@ -15,6 +15,7 @@ const intelligenceRoutes = require('./routes/intelligence')
 const logsRoutes = require('./routes/logs')
 const optimizeRoutes = require('./routes/optimize')
 const fuelRoutes = require('./routes/fuel')
+const { generalLimiter, aiLimiter, requireApiKey, helmet } = require('./middleware/security')
 const { connectToAIS } = require('./ais')
 const { startScheduler } = require('./scheduler')
 const pool = require('./db/index')
@@ -29,24 +30,26 @@ const io = new Server(server, {
 })
 const PORT = process.env.PORT || 3000
 
+app.use(helmet())
 app.use(cors())
 app.use(express.json())
 app.use(express.static('src'))
+app.use(generalLimiter)
 
 app.get('/', (req, res) => {
   res.json({ message: 'Maritime AI system is running' })
 })
 
 app.use('/api/vessels', vesselRoutes)
-app.use('/api/ask', aiRoutes)
+app.use('/api/ask', aiLimiter, requireApiKey, aiRoutes)
 app.use('/api/alerts', alertRoutes)
 app.use('/api/fleet', fleetRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/query', queryRoutes)
 app.use('/api/zones', zoneRoutes)
-app.use('/api/intelligence', intelligenceRoutes)
+app.use('/api/intelligence', aiLimiter, requireApiKey, intelligenceRoutes)
 app.use('/api/logs', logsRoutes)
-app.use('/api/optimize', optimizeRoutes)
+app.use('/api/optimize', aiLimiter, requireApiKey, optimizeRoutes)
 app.use('/api/fuel', fuelRoutes)
 
 // Socket.io connection handler
