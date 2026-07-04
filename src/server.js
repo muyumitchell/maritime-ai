@@ -16,6 +16,7 @@ const logsRoutes = require('./routes/logs')
 const optimizeRoutes = require('./routes/optimize')
 const fuelRoutes = require('./routes/fuel')
 const { generalLimiter, aiLimiter, requireApiKey, helmet } = require('./middleware/security')
+const { logger, httpLogger, errorHandler, notFoundHandler } = require('./middleware/logger')
 const { connectToAIS } = require('./ais')
 const { startScheduler } = require('./scheduler')
 const pool = require('./db/index')
@@ -35,6 +36,7 @@ app.use(cors())
 app.use(express.json())
 app.use(express.static('src'))
 app.use(generalLimiter)
+app.use(httpLogger)
 
 app.get('/', (req, res) => {
   res.json({ message: 'Maritime AI system is running' })
@@ -65,6 +67,11 @@ io.on('connection', (socket) => {
     console.log('Frontend disconnected:', socket.id)
   })
 })
+// Handle unknown routes
+app.use(notFoundHandler)
+
+// Centralized error handler — must be last
+app.use(errorHandler)
 
 // Make io available globally so AIS can use it
 global.io = io
