@@ -1,6 +1,9 @@
 const Groq = require('groq-sdk')
 require('dotenv').config()
 
+// Debug: check if key is being read
+console.log('GROQ KEY EXISTS:', !!process.env.GROQ_API_KEY)
+
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 })
