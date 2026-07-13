@@ -17,6 +17,8 @@ const optimizeRoutes = require('./routes/optimize')
 const fuelRoutes = require('./routes/fuel')
 const { generalLimiter, aiLimiter, requireApiKey, helmet } = require('./middleware/security')
 const { logger, httpLogger, errorHandler, notFoundHandler } = require('./middleware/logger')
+const swaggerUi = require('swagger-ui-express')
+const swaggerSpec = require('./docs')
 const { connectToAIS } = require('./ais')
 const { startScheduler } = require('./scheduler')
 const pool = require('./db/index')
@@ -37,6 +39,7 @@ app.use(express.json())
 app.use(express.static('src'))
 app.use(generalLimiter)
 app.use(httpLogger)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 app.get('/', (req, res) => {
   res.json({ message: 'Maritime AI system is running' })
@@ -79,5 +82,5 @@ global.io = io
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
   connectToAIS()
-  startScheduler(30)
+  startScheduler(120)
 })
