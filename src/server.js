@@ -35,8 +35,29 @@ const PORT = process.env.PORT || 3000
 
 app.set('trust proxy', 1)
 app.use(helmet())
-app.use(cors())
-app.use(express.json())
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  process.env.FRONTEND_URL
+].filter(Boolean)
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, mobile apps, server-to-server)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'x-api-key']
+}))
+
+app.use(express.json({ limit: '10kb' }))
 app.use(express.static('src'))
 app.use(generalLimiter)
 app.use(httpLogger)

@@ -21,7 +21,7 @@ const connectToAIS = () => {
     }
 
     ws.send(JSON.stringify(subscriptionMessage))
-    console.log('Subscription sent:', JSON.stringify(subscriptionMessage))
+    console.log('AIS subscription sent successfully')
   })
 
   ws.on('message', async (data) => {
@@ -76,89 +76,15 @@ const connectToAIS = () => {
     }
   })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
- ws.on('close', (code, reason) => {
-    console.log('AIS connection closed. Code:', code, 'Reason:', reason.toString())
-    setTimeout(connectToAIS, 5000)
+let reconnectDelay = 5000
+const maxDelay = 300000 // 5 minutes maximum
+
+ws.on('close', (code, reason) => {
+    console.log(`AIS connection closed. Code: ${code} — reconnecting in ${reconnectDelay/1000}s`)
+    setTimeout(() => {
+      reconnectDelay = Math.min(reconnectDelay * 2, maxDelay)
+      connectToAIS()
+    }, reconnectDelay)
 })
 
   ws.on('error', (error) => {

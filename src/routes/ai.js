@@ -14,6 +14,13 @@ router.post('/', async (req, res) => {
       })
     }
 
+    if (question.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'Question too long. Maximum 500 characters.'
+      })
+    }
+
     // Fetch current data from database to give AI context
     const vessels = await pool.query('SELECT * FROM vessels')
     const maintenance = await pool.query(

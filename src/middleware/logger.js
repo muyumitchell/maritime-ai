@@ -40,12 +40,12 @@ const logger = winston.createLogger({
 const httpLogger = morgan((tokens, req, res) => {
   const log = {
     method: tokens.method(req, res),
-    url: tokens.url(req, res),
+    url: tokens.url(req, res).split('?')[0], // Strip query parameters
     status: tokens.status(req, res),
     responseTime: `${tokens['response-time'](req, res)}ms`,
     timestamp: new Date().toISOString()
   }
-
+  
   // Log errors separately
   if (parseInt(tokens.status(req, res)) >= 400) {
     logger.error('HTTP Error', log)

@@ -21,6 +21,15 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params
+
+    // Validate id is a positive integer before hitting database
+    if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vessel ID. Must be a positive integer.'
+      })
+    }
+
     const result = await pool.query('SELECT * FROM vessels WHERE id = $1', [id])
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Vessel not found' })
@@ -36,6 +45,14 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/maintenance', async (req, res) => {
   try {
     const { id } = req.params
+
+    if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vessel ID. Must be a positive integer.'
+      })
+    }
+
     const result = await pool.query(
       'SELECT * FROM maintenance WHERE vessel_id = $1 ORDER BY scheduled_date DESC',
       [id]

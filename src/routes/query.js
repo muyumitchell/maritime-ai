@@ -32,6 +32,13 @@ router.post('/', async (req, res) => {
       })
     }
 
+    if (question.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'Question too long. Maximum 500 characters.'
+      })
+    }
+
     // Step 1 — Ask AI to write the SQL query
     const sqlPrompt = `
       ${DB_SCHEMA}
